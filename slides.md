@@ -533,6 +533,157 @@ The list itself is available on [Chromium's GitHub repo][hstspreload-chromium-gi
 * [hstspreload.org][hstspreload]
 * [RFC 6797: HTTP Strict Transport Security (HSTS)][rfc-6797]
 
+---
+
+## Cookies
+
+---
+
+### The concept of Web origin
+
+See https://developer.mozilla.org/en-US/docs/Glossary/Origin
+
+---
+
+### The public-suffix list and the concept of site
+
+See
+
+* https://publicsuffix.org/
+* https://developer.mozilla.org/en-US/docs/Glossary/Site
+
+"Site" is a painfully generic term behind such a technical concept!
+
+---
+
+### Cookies in a nutshell
+
+HTTP itself is a stateless protocol. Cookies allow some persistence.
+
+Cookies are set via [the `Set-Cookie` response header][set-cookie-mdn].
+
+Cookies are a form of _ambient authority_:
+the browser automatically attaches them to requests via the [`Cookie` request header][cookie-mdn].
+
+Cookies are unique per (name, domain, path).
+
+The source of many vulnerabilities...
+
+---
+
+### Cookie security attributes
+
+See MDN's page about the [`Set-Cookie` header][set-cookie-mdn].
+
+---
+
+#### `Domain`
+
+<details>
+ <summary>
+  
+  What dangers are associated with a broadly scoped cookie e.g. `Domain=efl.fr`?
+ </summary>
+  
+ It's sent to all subdomains of `efl.fr`, including those controlled by third parties.
+ What if some subdomain is vulnerable to takeover?
+</details>
+
+---
+
+#### `HttpOnly`
+
+* Prevents JavaScript code from reading/setting the cookie
+* Useful defence against session hijacking
+* Useful for process-isolation purposes (more on that later)
+
+<details>
+ <summary>
+  
+  `HttpOnly` is not that useful as a defence against cross-site scripting (XSS). Why?
+ </summary>
+  
+  [It only prevents session hijacking, not forged requests.][portswigger-httponly]
+</details>
+
+---
+
+#### `Secure`
+
+* Tells the browser not to attach the cookie to `http` requests
+* Disallows JavaScript code served from `http` origins from reading/setting the cookie
+
+---
+
+#### `SameSite`
+
+* Defence mechanism against cross-site request forgery (CSRF)
+* Governs "from which domains" cookies can come from
+* Cookies marked `SameSite=None` must also be marked `Secure`.
+* Now defaults to `Lax` in Chromium and Firefox
+
+<details>
+ <summary>
+  
+  Can you rely solely on the `SameSite` attribute to protect users against CSRF>
+ </summary>
+  
+ [Not if you cannot trust your subdomains or sibling domains][samesite-jub0bs]. 
+</details> 
+
+---
+
+### Cookie prefixes
+
+Problem: the browser doesn't send the attributes that a cookie was set with to the server.
+
+Solution: [cookie prefixes][set-cookie-mdn].
+
+* sort of in-band metadata
+* provides more guarantees about cookies
+
+---
+
+## `noopener`
+
+### Reverse tabnabbing
+
+What is a potential issue with a user sharing the following link on your website?
+
+```html
+<a href="https://foobar.com" target="_blank">Click me!</a>
+```
+
+<details>
+  <summary>
+   
+    Any ideas?
+  </summary>
+  
+  The new window retains a reference to its opener (i.e. the window that opened it).
+  The new window can modify its opener's `location`, a phenomenon known as [reverse tabnabbing][tabnabbing-honeybadger].
+  It could, for instance, redirect visitors to a phishing site looking just like your website.
+</details>
+
+---
+ 
+### `noopener` to the rescue
+
+```html
+<a href="https://foobar.com" target="_blank" rel="noopener">Click me!</a>
+```
+
+The [link type `noopener`][noopener-mdn] instructs browsers not to grant retain a reference to the window that opened the new one.
+ 
+Update (2021): [the HTML spec has changed][html-spec-noopener];
+windows opened via `<a target=_blank>` now don't have an opener by default [in all major browsers][noopenerbydefault-compat-mdn].
+
+---
+
+### `noopener` Case study
+
+Is your website vulnerable to reverse tabnabbing? Why or why not?
+
 [acme-wiki]: https://en.wikipedia.org/wiki/Automated_Certificate_Management_Environment
 [albinowax-about-complexity]: https://www.youtube.com/watch?v=gAnDUoq1NzQ&t=20s
 [burp]: https://portswigger.net/burp
@@ -542,6 +693,7 @@ The list itself is available on [Chromium's GitHub repo][hstspreload-chromium-gi
 [doesmysiteneedhttps]: https://doesmysiteneedhttps.com/
 [helms-deep]: https://cdnb.artstation.com/p/assets/images/images/006/318/889/large/adam-middleton-lotr-helms-deep-01-am.jpg
 [html-spec-noopener]: https://github.com/whatwg/html/issues/4078
+[httponly-portswigger]: https://portswigger.net/research/web-storage-the-lesser-evil-for-session-tokens#httponly
 [https-everywhere]: https://www.eff.org/https-everywhere
 [hstspreload]: https://hstspreload.org
 [hstspreload-continued-requirements]: https://hstspreload.org/#continued-requirements
@@ -558,13 +710,15 @@ The list itself is available on [Chromium's GitHub repo][hstspreload-chromium-gi
 [owasp-hsts]: https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Strict_Transport_Security_Cheat_Sheet.html
 [postman]: https://www.postman.com/
 [rfc-6797]: https://datatracker.ietf.org/doc/html/rfc6797
+[samesite-jub0bs]: https://jub0bs.com/posts/2021-01-29-great-samesite-confusion/
 [sca-owasp]: https://owasp.org/www-community/Component_Analysis
 [scott-helme-copypaste]: https://scotthelme.co.uk/death-by-copy-paste/
 [scott-helme-hsts]: https://scotthelme.co.uk/hsts-cheat-sheet/
+[set-cookie-mdn]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie
 [shodan]: https://www.shodan.io/
 [snyk]: https://snyk.io/
 [subdomain-takeover]: https://www.honeybadger.io/blog/subdomain-takeover/
-[subdomain-xir]: 	https://twitter.com/jub0bs/status/1139927828370210817
+[subdomain-xir]: https://twitter.com/jub0bs/status/1139927828370210817
 [supply-chain-attack-wiki]: https://en.wikipedia.org/wiki/Supply_chain_attack
 [tabnabbing-honeybadger]: https://www.honeybadger.io/blog/link-vulnerabilities/#reverse-tabnabbing
 [ticketmaster-fined]: https://ico.org.uk/about-the-ico/news-and-events/news-and-blogs/2020/11/ico-fines-ticketmaster-uk-limited-125million-for-failing-to-protect-customers-payment-details/
