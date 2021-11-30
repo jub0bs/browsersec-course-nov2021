@@ -410,12 +410,12 @@ If the response to either of those questions is "no", don't implement HSTS right
   * `63072000` (two years)
 
 <details>
-  <summary>
+ <summary>
    
-     Why is [this iterative approach][hstspreload-iterative] prudent?
+  Why is [this iterative approach][hstspreload-iterative] prudent?
  </summary>
  
-  If your assumptions are incorrect, you will lock users out for as long as `max-age`.
+ If your assumptions are incorrect, you will lock users out for as long as `max-age`.
 </details>
 
 ---
@@ -555,8 +555,9 @@ The list itself is available on [Chromium's GitHub repo][hstspreload-chromium-gi
 [myblog]: https://jub0bs.com/posts
 [noopener-mdn]: https://developer.mozilla.org/en-US/docs/Web/HTML/Link_types/noopener
 [noopenerbydefault-compat-mdn]: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#browser_compatibility
+[owasp-hsts]: https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Strict_Transport_Security_Cheat_Sheet.html
 [postman]: https://www.postman.com/
-[rfc696]: https://datatracker.ietf.org/doc/html/rfc6797
+[rfc-6797]: https://datatracker.ietf.org/doc/html/rfc6797
 [sca-owasp]: https://owasp.org/www-community/Component_Analysis
 [scott-helme-copypaste]: https://scotthelme.co.uk/death-by-copy-paste/
 [scott-helme-hsts]: https://scotthelme.co.uk/hsts-cheat-sheet/
