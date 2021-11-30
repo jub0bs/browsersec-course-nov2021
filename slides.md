@@ -306,7 +306,7 @@ Audit the TLS setup of your website on [Qualys SSL Labs][ssllabs].
   When I visit `https://sub.microsoft.com` in my browser, I can be assured that I'm talking to server controlled by Microsoft.
  </summary>
  
-	Not exactly: [subdomain takeover][subdomain-takeover] makes things [more complicated][subdomain-xir]!
+ Not exactly: [subdomain takeover][subdomain-takeover] makes things [more complicated][subdomain-xir]!
 </details>
 
 ---
