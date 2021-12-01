@@ -684,13 +684,187 @@ windows opened via `<a target=_blank>` now don't have an opener by default [in a
 
 Is your website vulnerable to reverse tabnabbing? Why or why not?
 
+---
+
+## Referrer Policy
+
+### The `Referer` header
+
+Note the typo from the HTTP spec: the proper spelling is "referrer".
+
+> The `Referer` HTTP request header contains an absolute or partial address of
+> the page that makes the request. The `Referer` header allows a server to identify
+> a page where people are visiting it from. This data can be used for analytics,
+> logging, optimized caching, and more.
+
+This request header is set by the browser automatically.
+
+The `Origin` request header is a spiritual (and better-behaved) successor to `Referer`.
+
+Because a URL, through its path and/or querystring, often contains sensitive data,
+the `Referer` header can inadvertently leak sensitive data to third parties.
+
+Case study: `Referer` header leaks password-reset links to third parties
+
+---
+
+### Referrer Policy
+
+A mechanism for instructing in which situations and how much information
+(either the full URL or only the URL's origin) the `Referer` header should contain.
+
+A page's Referrer Policy can be specified
+
+* either via the [`Referrer-Policy` response header][referrer-policy-mdn],
+* or via 
+
+You can also override the Referrer Policy in effect on specific HTML elements
+via the `referrerpolicy` attribute.
+
+---
+
+### Referrer Policy recommendations
+
+Because most modern browsers
+[now default to `strict-origin-when-cross-origin`][referrer-policy-default-mdn]
+the `Referer` header is less of a problem.
+
+But you may want to adopt the even stricter `no-referrer` value:
+
+```http
+Referrer-Policy: no-referrer
+```
+
+That way, third-party origins won't know that people came from your website.
+
+Case study: review your website's Referrer Policy.
+
+---
+
+## Cross-origin resource sharing (CORS)
+
+### Same-origin policy
+
+Arguably the cornerstone of browser security:
+
+> The same-origin policy is a critical security mechanism that restricts
+> how a document or script loaded by one origin can interact with a resource
+> from another origin.
+
+([MDN Web Docs][sop-mdn])
+
+In particular, if origin B sends a request to a different origin A, and
+origin B cannot read the response from origin A. Demo in the browser.
+
+---
+
+### The need for relaxing the SOP
+
+The SOP is what keeps people secure, but it stands somewhat in the way of
+modern Web practices:
+
+* mashups
+* single Web apps
+* REST or GraphQL APIs
+
+---
+
+### Dangerous SOP workarounds
+
+Before the advent of CORS, people had ingenious but dangerous techniques
+for working around the SOP:
+
+* [domain relaxation][domain-relaxation-html-spec]
+* [JSONP][jsonp-wiki]
+
+Avoid at all cost!
+
+---
+
+### CORS to the rescue
+
+A mechanism for selectively _relaxing_ some of the restrictions imposed
+by the SOP in browsers.
+
+More specifically, CORS is
+
+> an HTTP-header based mechanism that allows a server to indicate any origins
+> (domain, scheme, or port) other than its own from which a browser should
+> permit loading resources.
+
+([MDN Web Docs][cors-mdn])
+
+CORS is [a frequent source of frustration and misunderstanding for developers][cors-stackoverflow].
+As a result, many take shortcuts and end up compromising the security of their users.
+
+Don't be like them!
+
+---
+
+### CORS in a nutshell
+
+The [MDN Web Docs][cors-mdn] on the topic is essential reading!
+
+See also [Jake Archibald's CORS playground][cors-playground].
+
+---
+
+### Common misconceptions about CORS
+
+<details>
+ <summary>
+
+ I can rely on CORS as the primary defence against cross-site request forgery.
+ </summary>
+
+ No, that's too dangerous. Developers make wrong assumptions and things go wrong.
+</details>
+
+<details>
+ <summary>
+
+ I can solve a CORS error I don't fully understand just by copying & pasting
+ code from a highly upvoted answer on Stack Overflow.
+ </summary>
+
+ [Most definitely not!][cors-terrible-so-answer]
+</details>
+
+<details>
+ <summary>
+
+ CORS is a way to prevent random people from consuming my API.
+ </summary>
+
+ No. Those people can hit your API with a user agent other than a browser.
+</details>
+
+---
+
+### CORS misconfiguration
+
+Because CORS relaxes the browser's default security,
+it's important to understand what can go wrong.
+
+If you misconfigure CORS on your server,
+
+* at best, things simply won't work,
+* at worst, you will expose your users to cross-origin attacks meant to steal data.
+
+---
+
 [acme-wiki]: https://en.wikipedia.org/wiki/Automated_Certificate_Management_Environment
 [albinowax-about-complexity]: https://www.youtube.com/watch?v=gAnDUoq1NzQ&t=20s
 [burp]: https://portswigger.net/burp
 [chromium-referer-spoofing]: https://bugs.chromium.org/p/chromium/issues/detail?id=1233375
+[cors-stackoverflow]: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+[cors-mdn]: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+[cors-playground]: https://jakearchibald.com/2021/cors/playground/
+[cors-terrible-so-answer]: https://stackoverflow.com/questions/8719276/cross-origin-request-headerscors-with-php-headers/9866124#9866124
 [defence-in-depth]: https://en.wikipedia.org/wiki/Defense_in_depth_(computing)
 [dig-ditches]: https://www.youtube.com/watch?v=xPGdOXstSyk&t=180s
 [doesmysiteneedhttps]: https://doesmysiteneedhttps.com/
+[domain-relaxation-html-spec]: https://html.spec.whatwg.org/multipage/origin.html#relaxing-the-same-origin-restriction
 [helms-deep]: https://cdnb.artstation.com/p/assets/images/images/006/318/889/large/adam-middleton-lotr-helms-deep-01-am.jpg
 [html-spec-noopener]: https://github.com/whatwg/html/issues/4078
 [httponly-portswigger]: https://portswigger.net/research/web-storage-the-lesser-evil-for-session-tokens#httponly
@@ -703,12 +877,15 @@ Is your website vulnerable to reverse tabnabbing? Why or why not?
 [hstspreload-chromium-github]: https://github.com/chromium/chromium/blob/master/net/http/transport_security_state_static.json
 [hsts-mdn]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
 [http-01]: https://letsencrypt.org/docs/challenge-types/#http-01-challenge
+[jsonp-wiki]: https://en.wikipedia.org/wiki/JSONP
 [least-privilege]: https://en.wikipedia.org/wiki/Principle_of_least_privilege
 [myblog]: https://jub0bs.com/posts
 [noopener-mdn]: https://developer.mozilla.org/en-US/docs/Web/HTML/Link_types/noopener
 [noopenerbydefault-compat-mdn]: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a#browser_compatibility
 [owasp-hsts]: https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Strict_Transport_Security_Cheat_Sheet.html
 [postman]: https://www.postman.com/
+[referrer-policy-mdn]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
+[referrer-policy-default-mdn]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy#browser_compatibility
 [rfc-6797]: https://datatracker.ietf.org/doc/html/rfc6797
 [samesite-jub0bs]: https://jub0bs.com/posts/2021-01-29-great-samesite-confusion/
 [sca-owasp]: https://owasp.org/www-community/Component_Analysis
@@ -716,6 +893,7 @@ Is your website vulnerable to reverse tabnabbing? Why or why not?
 [scott-helme-hsts]: https://scotthelme.co.uk/hsts-cheat-sheet/
 [set-cookie-mdn]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie
 [shodan]: https://www.shodan.io/
+[sop]: https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
 [snyk]: https://snyk.io/
 [subdomain-takeover]: https://www.honeybadger.io/blog/subdomain-takeover/
 [subdomain-xir]: https://twitter.com/jub0bs/status/1139927828370210817
