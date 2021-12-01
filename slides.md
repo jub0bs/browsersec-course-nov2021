@@ -996,6 +996,8 @@ Audit your website for CORS usage. Is it well configured? Can it be abused?
 ### Good CORS practices
 
 * make sure you understand CORS
+* use strong origin validation
+* think about the trust relationship between your server and allowed origins
 * don't rely on your CORS policy as the primary defence against CSRF
 * validate requests' `Content-Type`
 * don't implement CORS yourself: use a dependable library/middleware
