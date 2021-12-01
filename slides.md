@@ -987,7 +987,7 @@ Access-Control-Allow-Origin: <request-origin>
  What if the server is bound to an inaccessible network interface (like `localhost`)?
  
  Case study: [WebStorm][cors-webstorm]
-<details>
+</details>
 
 Audit your website for CORS usage. Is it well configured? Can it be abused?
 
@@ -1011,8 +1011,6 @@ Audit your website for CORS usage. Is it well configured? Can it be abused?
 * [PortSwigger - Exploiting CORS misconfigurations for Bitcoins and bounties][cors-portswigger]
 * [Fetch standard][fetch-standard]
  
----
-
 ---
 
 ## Subresource integrity
