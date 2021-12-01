@@ -893,7 +893,7 @@ If you misconfigure CORS on your server,
 [scott-helme-hsts]: https://scotthelme.co.uk/hsts-cheat-sheet/
 [set-cookie-mdn]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie
 [shodan]: https://www.shodan.io/
-[sop]: https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
+[sop-mdn]: https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy
 [snyk]: https://snyk.io/
 [subdomain-takeover]: https://www.honeybadger.io/blog/subdomain-takeover/
 [subdomain-xir]: https://twitter.com/jub0bs/status/1139927828370210817
