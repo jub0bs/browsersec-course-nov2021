@@ -862,12 +862,14 @@ Access-Control-Allow-Origin: <origin>
 Access-Control-Allow-Credentials: true
 ```
 
-#### https origin trusts http origin
+<details>
+ <summary>
 
-```http
-Access-Control-Allow-Origin: http://example.com
-Access-Control-Allow-Credentials: true
-```
+ How can this be abused?
+ </summary>
+
+ All origins are allowed. Game over!
+</details>
 
 ---
 
@@ -946,7 +948,7 @@ Access-Control-Allow-Credentials: true
 
 ---
 
-#### Trusting insecure origin
+#### Trusting insecure origins
 
 ```http
 Access-Control-Allow-Origin: http://example.com
