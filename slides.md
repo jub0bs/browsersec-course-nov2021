@@ -716,7 +716,7 @@ A mechanism for instructing in which situations and how much information
 A page's Referrer Policy can be specified
 
 * either via the [`Referrer-Policy` response header][referrer-policy-mdn],
-* or via 
+* or via a `<meta>` element.
 
 You can also override the Referrer Policy in effect on specific HTML elements
 via the `referrerpolicy` attribute.
@@ -764,7 +764,7 @@ The SOP is what keeps people secure, but it stands somewhat in the way of
 modern Web practices:
 
 * mashups
-* single Web apps
+* single-page applications
 * REST or GraphQL APIs
 
 ---
@@ -853,18 +853,272 @@ If you misconfigure CORS on your server,
 
 ---
 
+### Common CORS misconfigurations
+
+#### Arbitrary origin
+
+```http
+Access-Control-Allow-Origin: <origin>
+Access-Control-Allow-Credentials: true
+```
+
+#### https origin trusts http origin
+
+```http
+Access-Control-Allow-Origin: http://example.com
+Access-Control-Allow-Credentials: true
+```
+
+---
+
+#### Failed suffix check
+
+The server allows (with credentials) any origin that matches the following regex:
+
+```txt
+^https://.*example\.com$
+```
+
+<details>
+ <summary>
+
+ How can this be abused?
+ </summary>
+
+ Origin `https://notexample.com` matches!
+ See [a report of this problem to Zomato][cors-zomato-h1].
+</details>
+
+---
+
+#### Failed prefix check
+
+The server allows (with credentials) any origin that matches the following regex:
+
+```txt
+^https://.*\.example\.com
+```
+
+<details>
+ <summary>
+
+ How can this be abused?
+ </summary>
+
+ Origin `https://example.com.attacker.com` matches!
+</details>
+
+---
+
+#### Failed regex escape
+
+The server allows (with credentials) any origin that matches the following regex:
+
+```txt
+^https://.*\.example.co\.uk$
+```
+
+<details>
+ <summary>
+
+ How can this be abused?
+ </summary>
+
+ Origin `https://examplezco.uk` matches!
+</details>
+---
+
+#### Null origin
+
+```http
+Access-Control-Allow-Origin: null
+Access-Control-Allow-Credentials: true
+```
+
+<details>
+ <summary>
+
+ How can this be abused?
+ </summary>
+
+ Any sandbox iframe has the `null` origin!
+</details>
+
+---
+
+#### Trusting insecure origin
+
+```http
+Access-Control-Allow-Origin: http://example.com
+Access-Control-Allow-Credentials: true
+```
+
+<details>
+ <summary>
+
+ How can this be abused?
+ </summary>
+
+ It's [complicated][cors-insecure-origin]... but it defeats the server's use of HTTPS!
+</details>
+
+---
+
+#### Arbitrary origin without credentials
+
+```http
+Access-Control-Allow-Origin: *
+```
+
+or 
+
+```http
+Access-Control-Allow-Origin: <request-origin>
+```
+
+<details>
+ <summary>
+
+ Can you think of situations in which this could be dangerous?
+ </summary>
+
+ What if the server is bound to an inaccessible network interface (like `localhost`)?
+ 
+ Case study: [WebStorm][cors-webstorm]
+<details>
+
+Audit your website for CORS usage. Is it well configured? Can it be abused?
+
+---
+
+### Good CORS practices
+
+* make sure you understand CORS
+* don't rely on your CORS policy as the primary defence against CSRF
+* validate requests' `Content-Type`
+* don't implement CORS yourself: use a dependable library/middleware
+* any changes to your CORS policy should be subject to review
+
+---
+
+### Resources about CORS
+
+* [MDN Web Docs about CORS][cors-mdn]
+* [PortSwigger - Exploiting CORS misconfigurations for Bitcoins and bounties][cors-portswigger]
+* [Fetch standard][fetch-standard]
+ 
+---
+
+---
+
+## Subresource integrity
+
+### Problems with scripts hosted by third parties
+
+Assume that some frontend HTML contains the following piece of code:
+
+```html
+<script src="https://somethirdparty.com/foobar.js"></script>
+```
+
+Domain `somethirdparty.com` is a domain you do not own.
+
+Let's assume that you've audited `foobar.js` and determined that executing that code in the context of your app is secure...
+
+<details>
+  <summary>What could possibly go wrong?</summary>
+  
+How can you be sure that `foobar.js` will remain safe? The hosting third party may
+  
+1. make well-intentioned but dangerous changes to `foobar.js`,
+2. get bought by some malicious actor,
+3. get compromised by some malicious actor.
+  
+</details>
+
+What about the following?
+
+```html
+<script src="https://cdn.yourdomain.com/foobar.js"></script>
+```
+
+<details>
+  <summary>What could possibly go wrong?</summary>
+  
+* Is `cdn.yourdomain.com` pointing to a third-party service via a CNAME DNS record?
+* If so, can you trust that third party?
+  
+</details>
+
+What about the following?
+
+```html
+<script src="https://yourbucket.s3.us-west-2.amazonaws.com/foobar.js"></script>
+```
+
+<details>
+  <summary>What could possibly go wrong?</summary>
+  
+* Does the bucket in question have a strict ACL?
+* Can objects within it be overwritten?
+  
+</details>
+
+---
+
+### Supply-chain attacks & Web skimming
+
+> [...] a cyber-attack that seeks to damage an organization by targeting less-secure elements in the supply chain.
+
+([Wikipedia][supply-chain-attack-wiki])
+
+Many supply-chain attacks against websites consist in _Web skimming_:
+
+> [...] an attack where the attacker injects malicious code into a website and extracts data from an HTML form that the user has filled in.
+
+([Wikipedia][web-skimming-wiki])
+
+How? In many cases, by compromising a third party that hosts JavaScript loaded by the targeted website.
+
+---
+
+#### Case study: Ticketmaster
+
+Ticketmaster was later [fined £125 million by the ICO][ticketmaster-fined] (the UK's CNIL):
+
+> The Information Commissioner’s Office (ICO) has fined Ticketmaster UK Limited £1.25million for failing to keep its customers’ personal data secure.
+>
+> The ICO found that the company failed to put appropriate security measures in place to prevent a cyber-attack on a chat-bot installed on its online payment page.
+>
+> Ticketmaster’s failure to protect customer information is a breach of the General Data Protection Regulation (GDPR).
+ 
+---
+ 
+### Subresource integrity to the rescue
+ 
+See https://developer.mozilla.org/en-US/docs/Web/Security/Subresource_Integrity
+ 
+Does your site use subresource integrity for scripts/styles served by third parties?
+ 
+---
+
 [acme-wiki]: https://en.wikipedia.org/wiki/Automated_Certificate_Management_Environment
 [albinowax-about-complexity]: https://www.youtube.com/watch?v=gAnDUoq1NzQ&t=20s
 [burp]: https://portswigger.net/burp
 [chromium-referer-spoofing]: https://bugs.chromium.org/p/chromium/issues/detail?id=1233375
-[cors-stackoverflow]: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+[cors-stackoverflow]: https://stackoverflow.com/questions/tagged/cors
 [cors-mdn]: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
 [cors-playground]: https://jakearchibald.com/2021/cors/playground/
+[cors-insecure-origin]: https://twitter.com/jub0bs/status/1352160391032401923
+[cors-portswigger]: https://portswigger.net/research/exploiting-cors-misconfigurations-for-bitcoins-and-bounties
+[cors-zomato-h1]: https://hackerone.com/reports/168574
+[cors-webstorm]: http://blog.saynotolinux.com/blog/2016/08/15/jetbrains-ide-remote-code-execution-and-local-file-disclosure-vulnerability-analysis/
 [cors-terrible-so-answer]: https://stackoverflow.com/questions/8719276/cross-origin-request-headerscors-with-php-headers/9866124#9866124
 [defence-in-depth]: https://en.wikipedia.org/wiki/Defense_in_depth_(computing)
 [dig-ditches]: https://www.youtube.com/watch?v=xPGdOXstSyk&t=180s
 [doesmysiteneedhttps]: https://doesmysiteneedhttps.com/
 [domain-relaxation-html-spec]: https://html.spec.whatwg.org/multipage/origin.html#relaxing-the-same-origin-restriction
+[fetch-standard]: https://fetch.spec.whatwg.org/
 [helms-deep]: https://cdnb.artstation.com/p/assets/images/images/006/318/889/large/adam-middleton-lotr-helms-deep-01-am.jpg
 [html-spec-noopener]: https://github.com/whatwg/html/issues/4078
 [httponly-portswigger]: https://portswigger.net/research/web-storage-the-lesser-evil-for-session-tokens#httponly
