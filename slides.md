@@ -1104,9 +1104,244 @@ Does your site use subresource integrity for scripts/styles served by third part
  
 ---
 
+## X-Content-Type-Options
+
+### MIME-type sniffing
+
+When a response lacks a `Content-Type` header,
+browsers inspect the response body to try to [guess the content type][sniffing-standard].
+
+This is problematic because browsers may be tricked into
+interpreting user-generated content as something executable.
+
+Moreover, sniffing has a performance cost.
+
+---
+
+### The `X-Content-Type-Options` header
+
+This [response header][x-content-type-options-mdn] accepts only one value, `nosniff`,
+which instructs browsers
+
+* not to guess the content type, and
+* simply default to a harmless, non-executable content type.
+
+---
+
+### Don't leave browsers in doubt!
+
+Systematically add a `Content-Type` header to responses and use
+
+```http
+X-Content-Type-Options: nosniff
+```
+
+---
+
+## `X-Frame-Options`
+
+This response header that restricts which origins can frame the page.
+
+Useful to protect users against attacks like [clickjacking][clickjacking-owasp].
+
+Superseded by the `frame-ancestors` CSP directive in modern browsers, but
+still useful for older browsers (IE) that do not support CSP.
+
+---
+
+## The `X-XSS-Protection` response header
+
+### XSS Auditor
+
+A set of heuristics to detect (and possibly remove) malicious script
+injected in the page by an attacker.
+
+The XSS Auditor is [problematic][x-xss-protection-filedescriptor] because
+
+* false positives can be abused by attackers,
+* false negatives (bypasses) exist.
+
+For these reasons,
+
+* Chromium no longer has an XSS Auditor,
+* Firefox never had and never will have one.
+
+However, Internet Explorer and Safari still have an XSS Auditor, which is on by default.
+
+Content Security Policy is a modern alternative to the XSS Auditor.
+
+---
+
+### `X-XSS-Protection`
+
+This response header allows you to configure the XSS Auditor for the page.
+
+A recommended setting, for the benefit of IE users, is
+
+```http
+X-XSS-Protection: 1; mode=block
+```
+
+which causes the browser not to render the page if the XSS Auditor detects
+something suspicious.
+
+---
+
+## Content Security Policy (CSP)
+
+### A defence-in-depth mechanism
+
+* places restrictions on sources of the page's Web content
+* creates additional obstacles for attackers
+* helps mitigate attacks like XSS and clickjacking
+* not a licence to drop other defence mechanisms!
+
+---
+
+### CSP complexity
+
+* a powerful, but complex beast
+* the Swiss Army knife of browser security!
+* features and best practices are still evolving
+
+---
+
+### The `Content-Security-Policy` headers
+
+See [MDN Web Docs][csp-mdn] about it.
+
+A page's CSP can alternatively be set via a `<meta>` HTML element.
+
+Any CSP violation results in an error in the browser console.
+
+---
+
+### Notable CSP directives
+
+* `default-src`
+* `script-src`
+* `style-src`
+* `connect-src`
+* `object-src`
+* `form-action`
+*  `base-uri`
+* `frame-ancestors` and `frame-src`
+* `report-to`
+
+---
+
+### CSP in reporting mode only
+
+The `report-to` directive allows you to specify where CSP violation reports will be sent by your users's browsers.
+
+It's best to point `report-to` to a dedicated server
+or third-party service (e.g. [Report URI][report-uri]). Why?
+
+The [MDN Web Docs about the `Content-Security-Policy-Report-Only` header][cspro-mdn]
+allows you to test a CSP in production without actually raising errors.
+
+---
+
+### Audit your CSP
+
+Some CSPs can give you a [false sense of security][cheeto-lock],
+but can easily be bypassed.
+
+[Google's CSP evaluator][csp-evaluator] allows you to audit your CSP
+and gives you guidance for improving it.
+
+---
+
+### Case study: Twitter's CSP
+
+Visit https://twitter.com and inspect the response `Content-Security-Policy` header.
+
+Use [Google's CSP evaluator][csp-evaluator] to an audit of that CSP.
+
+---
+
+### Setting up a CSP for your website
+
+You can adopt an iterative approach locally at first:
+
+1. choose a very strict CSP
+2. set up your intercepting proxy to inject the `Content-Security-Policy` header in responses
+3. navigate your website
+4. take note of all the CSP errors raised in your browser's console
+5. relax your CSP to correct those errors
+6. repeat steps 3-5 until all CSP errors are gone
+7. audit your CSP on [Google's CSP evaluator][csp-evaluator]
+8. fix issues
+
+Once you're happy,
+
+1. enable your CSP in report-only mode
+2. monitor and fix any errors by your users's browsers
+
+Once you're confident that your CSP is solid,
+
+1. enable your CSP for real
+2. keep monitoring and fixing any errors by your users's browsers
+
+---
+
+### When CSP backfires
+
+CSP implementation varies from one browser to another.
+
+Security researchers have found that CSP can be abused to leak data across origins:
+
+* [crbug 1259077: form-action's blocking of redirects allows top-navigation XSLeak][crbug1259077]
+* [Threat Nix - Exploiting CSP in Webkit to Break Authentication & Authorization][prakash]
+
+---
+
+## Fetch Metadata
+
+### The need for request metadata
+
+Servers have little information about the context in which a request was
+initiated in the browser.
+
+In particular, not all requests contain `Referer` and `Origin` headers.
+
+---
+
+### Fetch Metadata to the rescue
+
+A set of [four request headers][fetch-metadata-mdn] automatically added by the browser.
+
+Servers can [leverage those request metadata][fetch-metadata-webdev] in order to
+
+* implement some server-side isolation policy,
+* defend users against cross-origin attacks.
+
+A promising technology!
+
+Not widely supported yet: only in Chromium and Firefox.
+
+Little library/framework support so far...
+
+Would you have a use for Fetch Metadata headers?
+
 [acme-wiki]: https://en.wikipedia.org/wiki/Automated_Certificate_Management_Environment
 [albinowax-about-complexity]: https://www.youtube.com/watch?v=gAnDUoq1NzQ&t=20s
 [burp]: https://portswigger.net/burp
+[crbug1259077]: https://bugs.chromium.org/p/chromium/issues/detail?id=1259077
+[cheeto-lock]: https://i.kym-cdn.com/entries/icons/original/000/026/380/lock.jpg
+[csp-evaluator]: https://csp-evaluator.withgoogle.com/
+[csp-mdn]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
+[cspro-mdn]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy-Report-Only
+[owasp-juice-shop-github]: https://github.com/juice-shop/juice-shop
+[owasp-juice-shop-heroku]: https://jub0bs-owasp-juice-shop.herokuapp.com/#/
+[x-xss-protection-filedescriptor]: https://blog.innerht.ml/the-misunderstood-x-xss-protection/
+[fetch-metadata-mdn]: https://developer.mozilla.org/en-US/docs/Glossary/Fetch_metadata_request_header
+[fetch-metadata-webdev]: https://web.dev/fetch-metadata/
+[report-uri]: https://report-uri.com/
+[prakash]: https://threatnix.io/blog/exploiting-csp-in-webkit-to-break-authentication-authorization/
+[sniffing-standard]: https://mimesniff.spec.whatwg.org/#introduction
+[x-content-type-options-mdn]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options
+[clickjacking-owasp]: https://owasp.org/www-community/attacks/Clickjacking
 [chromium-referer-spoofing]: https://bugs.chromium.org/p/chromium/issues/detail?id=1233375
 [cors-stackoverflow]: https://stackoverflow.com/questions/tagged/cors
 [cors-mdn]: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
